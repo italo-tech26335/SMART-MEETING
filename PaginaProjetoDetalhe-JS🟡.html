@@ -1642,6 +1642,11 @@ function renderizarProjetosCards() {
         '<a href="' + proj.link + '" target="_blank" class="btn-abrir-link" title="Abrir no Drive"><i class="fas fa-external-link-alt"></i></a></div></div>';
     }
 
+    // ★ BOTÃO VER ATAS ★
+    html += '<div class="projeto-card-campo full projeto-card-atas-btn-wrap">' +
+      '<button class="btn-ver-atas-projeto" onclick="abrirModalAtasProjeto(\'' + proj.id + '\', \'' + proj.nome.replace(/'/g, "\\'") + '\', event)">' +
+      '<i class="fas fa-book-open"></i> Ver Atas e Documentos</button></div>';
+
     html += '</div></div></div>';
   });
 
@@ -2303,6 +2308,11 @@ function abrirModoFoco() {
 
   // Sincroniza o conteúdo após abrir (renderizarDiagrama já chama sincronizarModoFoco no final)
   renderizarDiagrama();
+
+  // Carregar documentos (atas/transcrições) no painel direito
+  if (ESTADO.projeto && ESTADO.projeto.id) {
+    carregarDocumentosModoFoco(ESTADO.projeto.id);
+  }
 }
 
 /** Fecha o Modo Foco */
@@ -4430,6 +4440,290 @@ function _atualizarBotaoTema(estaAzul) {
   }
 }
 
+// ========================= MÓDULO: ATAS DO PROJETO =========================
 
+/** Estado local do visualizador de atas */
+var _atasProjetoEstado = {
+  reunioes: [],
+  reuniaoAtiva: null,
+  tabAtiva: 'ata',
+  tabFocoAtiva: 'atas'
+};
+
+/** Abre o modal de atas para o projeto informado */
+function abrirModalAtasProjeto(projetoId, nomeProjeto, event) {
+  if (event) event.stopPropagation();
+
+  var modal = document.getElementById('modalAtasProjeto');
+  var titulo = document.getElementById('modalAtasProjetoTitulo');
+  var lista  = document.getElementById('catalogoAtasProjetoLista');
+  var badge  = document.getElementById('badgeContadorAtasProjeto');
+
+  if (!modal) return;
+
+  if (titulo) titulo.textContent = 'Atas — ' + nomeProjeto;
+  if (lista)  lista.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Carregando reuniões...</p></div>';
+  if (badge)  badge.textContent = '0';
+
+  // Resetar viewer
+  _resetarViewerAtas();
+
+  modal.classList.add('visivel');
+  document.body.style.overflow = 'hidden';
+
+  // Buscar dados no backend
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        _atasProjetoEstado.reunioes = (res && res.reunioes) ? res.reunioes : [];
+        if (badge) badge.textContent = _atasProjetoEstado.reunioes.length;
+        _renderizarCatalogoAtasProjeto(_atasProjetoEstado.reunioes, lista);
+      })
+      .withFailureHandler(function(err) {
+        if (lista) lista.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Erro ao carregar: ' + err + '</p></div>';
+      })
+      .obterReunioesDoProjeto(projetoId);
+  } else {
+    // modo demo
+    _atasProjetoEstado.reunioes = [];
+    if (lista) lista.innerHTML = '<div class="empty-state"><i class="fas fa-info-circle"></i><p>Nenhuma reunião encontrada (modo offline)</p></div>';
+  }
+}
+
+/** Fecha o modal de atas */
+function fecharModalAtasProjeto() {
+  var modal = document.getElementById('modalAtasProjeto');
+  if (modal) modal.classList.remove('visivel');
+  document.body.style.overflow = '';
+  _atasProjetoEstado.reuniaoAtiva = null;
+}
+
+/** Renderiza o catálogo de reuniões no painel esquerdo do modal */
+function _renderizarCatalogoAtasProjeto(reunioes, container) {
+  if (!container) return;
+  if (!reunioes || reunioes.length === 0) {
+    container.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-times"></i><p>Nenhuma reunião vinculada a este projeto</p></div>';
+    return;
+  }
+
+  var html = '';
+  reunioes.forEach(function(r) {
+    var dataFormatada = r.data ? _formatarDataAta(r.data) : '—';
+    html += '<div class="ata-catalogo-item" data-reuniao-id="' + r.id + '" onclick="_selecionarReuniaoAta(\'' + r.id + '\')">';
+    html += '<div class="ata-catalogo-item-titulo"><i class="fas fa-video"></i> ' + _escaparHtml(r.titulo) + '</div>';
+    html += '<div class="ata-catalogo-item-meta">';
+    html += '<span><i class="fas fa-calendar-alt"></i> ' + dataFormatada + '</span>';
+    if (r.duracao) html += '<span><i class="fas fa-clock"></i> ' + _escaparHtml(r.duracao) + '</span>';
+    html += '</div>';
+    html += '<div class="ata-catalogo-item-badges">';
+    html += r.temAta ? '<span class="badge-doc tem"><i class="fas fa-file-lines"></i> Ata</span>' : '<span class="badge-doc nao"><i class="fas fa-file-lines"></i> Sem ata</span>';
+    html += r.temTranscricao ? '<span class="badge-doc tem"><i class="fas fa-microphone"></i> Transcrição</span>' : '';
+    html += '</div>';
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+/** Seleciona uma reunião e exibe no visualizador */
+function _selecionarReuniaoAta(reuniaoId) {
+  var reuniao = _atasProjetoEstado.reunioes.find(function(r) { return r.id === reuniaoId; });
+  if (!reuniao) return;
+
+  _atasProjetoEstado.reuniaoAtiva = reuniao;
+
+  // Destacar item ativo
+  var itens = document.querySelectorAll('.ata-catalogo-item');
+  itens.forEach(function(el) {
+    el.classList.toggle('ativo', el.dataset.reuniaoId === reuniaoId);
+  });
+
+  // Atualizar header do viewer
+  var viewerTitulo = document.getElementById('atasViewerTitulo');
+  var viewerTabs   = document.getElementById('atasViewerTabs');
+  if (viewerTitulo) viewerTitulo.textContent = reuniao.titulo;
+  if (viewerTabs)   viewerTabs.style.display = 'flex';
+
+  // Exibir conteúdo da aba ativa
+  _exibirConteudoTabAtas(_atasProjetoEstado.tabAtiva);
+}
+
+/** Troca aba no visualizador de atas (Ata / Transcrição) */
+function trocarTabAtasViewer(btn, tab) {
+  _atasProjetoEstado.tabAtiva = tab;
+
+  var tabs = document.querySelectorAll('.modal-atas-viewer-tabs .atas-tab');
+  tabs.forEach(function(t) { t.classList.toggle('ativo', t.dataset.tab === tab); });
+
+  _exibirConteudoTabAtas(tab);
+}
+
+/** Exibe o conteúdo (ata ou transcrição) no viewer */
+function _exibirConteudoTabAtas(tab) {
+  var corpo   = document.getElementById('atasViewerCorpo');
+  var reuniao = _atasProjetoEstado.reuniaoAtiva;
+  if (!corpo || !reuniao) return;
+
+  var conteudo = tab === 'ata' ? reuniao.ata : reuniao.transcricao;
+
+  if (!conteudo || conteudo.trim().length === 0) {
+    corpo.innerHTML = '<div class="ata-vazia-viewer"><i class="fas fa-file-slash"></i><p>' +
+      (tab === 'ata' ? 'Ata não disponível para esta reunião' : 'Transcrição não disponível para esta reunião') +
+      '</p></div>';
+    return;
+  }
+
+  // Renderizar como HTML se for markdown-like, ou texto puro
+  var htmlConteudo = conteudo.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // Converter markdown básico: **negrito**, # títulos, - lista
+  htmlConteudo = htmlConteudo
+    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/\n/g, '<br>');
+
+  corpo.innerHTML = '<div class="atas-viewer-html">' + htmlConteudo + '</div>';
+}
+
+/** Reseta o viewer para o estado inicial */
+function _resetarViewerAtas() {
+  var viewerTitulo = document.getElementById('atasViewerTitulo');
+  var viewerTabs   = document.getElementById('atasViewerTabs');
+  var viewerCorpo  = document.getElementById('atasViewerCorpo');
+  if (viewerTitulo) viewerTitulo.textContent = 'Nenhuma reunião selecionada';
+  if (viewerTabs)   viewerTabs.style.display = 'none';
+  if (viewerCorpo)  viewerCorpo.innerHTML = '<div class="ata-vazia-viewer"><i class="fas fa-book-open"></i><p>Selecione uma reunião no catálogo ao lado para visualizar a ata</p></div>';
+  _atasProjetoEstado.reuniaoAtiva = null;
+  _atasProjetoEstado.tabAtiva = 'ata';
+}
+
+// ========================= MÓDULO: MODO FOCO — DOCUMENTOS =========================
+
+/** Carrega os documentos (reuniões) no painel direito do Modo Foco */
+function carregarDocumentosModoFoco(projetoId) {
+  var lista  = document.getElementById('modoFocoDocLista');
+  var badge  = document.getElementById('modoFocoDocBadge');
+  var viewer = document.getElementById('modoFocoDocViewer');
+
+  if (lista)  lista.innerHTML = '<div class="empty-state" style="font-size:0.8rem;"><i class="fas fa-spinner fa-spin"></i><p>Carregando...</p></div>';
+  if (viewer) viewer.style.display = 'none';
+  if (lista)  lista.style.display = 'block';
+
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        var reunioes = (res && res.reunioes) ? res.reunioes : [];
+        if (badge) badge.textContent = reunioes.length;
+        _atasProjetoEstado.reunioes = reunioes;
+        _renderizarDocListaFoco(reunioes, lista, _atasProjetoEstado.tabFocoAtiva);
+      })
+      .withFailureHandler(function() {
+        if (lista) lista.innerHTML = '<div class="empty-state" style="font-size:0.8rem;"><i class="fas fa-exclamation-circle"></i><p>Erro ao carregar</p></div>';
+      })
+      .obterReunioesDoProjeto(projetoId);
+  } else {
+    if (lista) lista.innerHTML = '<div class="empty-state" style="font-size:0.8rem;"><i class="fas fa-info-circle"></i><p>Nenhum documento (offline)</p></div>';
+  }
+}
+
+/** Renderiza a lista de documentos no painel do Modo Foco */
+function _renderizarDocListaFoco(reunioes, container, tab) {
+  if (!container) return;
+
+  var filtradas = tab === 'transcricoes'
+    ? reunioes.filter(function(r) { return r.temTranscricao; })
+    : reunioes.filter(function(r) { return r.temAta; });
+
+  if (filtradas.length === 0) {
+    container.innerHTML = '<div class="empty-state" style="font-size:0.8rem;"><i class="fas fa-calendar-times"></i><p>' +
+      (tab === 'transcricoes' ? 'Nenhuma transcrição disponível' : 'Nenhuma ata disponível') +
+      '</p></div>';
+    return;
+  }
+
+  var html = '';
+  filtradas.forEach(function(r) {
+    var dataFmt = r.data ? _formatarDataAta(r.data) : '—';
+    html += '<div class="modo-foco-doc-item" onclick="_abrirDocFoco(\'' + r.id + '\', \'' + (tab === 'transcricoes' ? 'transcricao' : 'ata') + '\')">';
+    html += '<i class="fas fa-' + (tab === 'transcricoes' ? 'microphone' : 'file-lines') + '"></i>';
+    html += '<div class="modo-foco-doc-item-info">';
+    html += '<div class="modo-foco-doc-item-titulo">' + _escaparHtml(r.titulo) + '</div>';
+    html += '<div class="modo-foco-doc-item-data">' + dataFmt + '</div>';
+    html += '</div></div>';
+  });
+
+  container.innerHTML = html;
+}
+
+/** Abre um documento específico no viewer do Modo Foco */
+function _abrirDocFoco(reuniaoId, tipoTab) {
+  var reuniao = _atasProjetoEstado.reunioes.find(function(r) { return r.id === reuniaoId; });
+  if (!reuniao) return;
+
+  var lista   = document.getElementById('modoFocoDocLista');
+  var viewer  = document.getElementById('modoFocoDocViewer');
+  var titulo  = document.getElementById('modoFocoDocViewerTitulo');
+  var conteudoEl = document.getElementById('modoFocoDocViewerConteudo');
+
+  if (lista)  lista.style.display = 'none';
+  if (viewer) viewer.style.display = 'flex';
+  if (titulo) titulo.textContent = reuniao.titulo;
+
+  var texto = tipoTab === 'transcricao' ? reuniao.transcricao : reuniao.ata;
+
+  if (!texto || texto.trim().length === 0) {
+    if (conteudoEl) conteudoEl.innerHTML = '<div class="ata-vazia-viewer"><i class="fas fa-file-slash"></i><p>Conteúdo não disponível</p></div>';
+    return;
+  }
+
+  var htmlConteudo = texto.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/\n/g, '<br>');
+
+  if (conteudoEl) conteudoEl.innerHTML = '<div class="atas-viewer-html">' + htmlConteudo + '</div>';
+}
+
+/** Volta para a lista no painel do Modo Foco */
+function voltarParaListaDocFoco() {
+  var lista   = document.getElementById('modoFocoDocLista');
+  var viewer  = document.getElementById('modoFocoDocViewer');
+  if (lista)  lista.style.display = 'block';
+  if (viewer) viewer.style.display = 'none';
+}
+
+/** Troca aba (Atas / Transcrições) no painel do Modo Foco */
+function trocarTabDocFoco(btn, tab) {
+  _atasProjetoEstado.tabFocoAtiva = tab;
+
+  var tabBtns = document.querySelectorAll('.modo-foco-doc-tabs .atas-tab');
+  tabBtns.forEach(function(t) { t.classList.toggle('ativo', t.dataset.tab === tab); });
+
+  var lista = document.getElementById('modoFocoDocLista');
+  voltarParaListaDocFoco();
+  _renderizarDocListaFoco(_atasProjetoEstado.reunioes, lista, tab);
+}
+
+// ========================= UTILITÁRIOS =========================
+
+function _formatarDataAta(dataStr) {
+  try {
+    var d = new Date(dataStr);
+    if (isNaN(d.getTime())) return dataStr;
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch(e) { return dataStr; }
+}
+
+function _escaparHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 </script>

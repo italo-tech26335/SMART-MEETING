@@ -2226,4 +2226,422 @@ textarea { resize: vertical; min-height: 65px; }
   transform: scale(1.04);
 }
 
+/* =====================================================================
+   MODAL ATAS DO PROJETO
+===================================================================== */
+.modal-atas-content {
+  max-width: 92vw;
+  width: 1100px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-atas-body {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-top: 1px solid var(--cor-borda-clara);
+}
+
+/* Coluna esquerda: catálogo */
+.modal-atas-catalogo {
+  border-right: 1px solid var(--cor-borda-clara);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--cor-fundo);
+}
+
+.modal-atas-catalogo-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--cor-texto-secundario);
+  border-bottom: 1px solid var(--cor-borda-clara);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  flex-shrink: 0;
+}
+
+.modal-atas-catalogo-lista {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px;
+}
+
+/* Item do catálogo */
+.ata-catalogo-item {
+  padding: 10px 12px;
+  border-radius: var(--raio);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: var(--transicao);
+  margin-bottom: 4px;
+  background: var(--cor-fundo-card);
+}
+
+.ata-catalogo-item:hover {
+  border-color: var(--cor-borda);
+  background: var(--cor-fundo-quente);
+}
+
+.ata-catalogo-item.ativo {
+  border-color: var(--cor-primaria);
+  background: var(--cor-primaria-bg);
+}
+
+.ata-catalogo-item-titulo {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--cor-texto);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ata-catalogo-item-titulo i { color: var(--cor-primaria); font-size: 0.75rem; }
+
+.ata-catalogo-item-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 0.72rem;
+  color: var(--cor-texto-secundario);
+  margin-bottom: 6px;
+}
+
+.ata-catalogo-item-badges {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.badge-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.badge-doc.tem {
+  background: rgba(90, 114, 71, 0.12);
+  color: var(--cor-sucesso);
+}
+
+.badge-doc.nao {
+  background: rgba(122, 101, 85, 0.08);
+  color: var(--cor-texto-secundario);
+}
+
+/* Coluna direita: visualizador */
+.modal-atas-visualizador {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--cor-fundo-card);
+}
+
+.modal-atas-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--cor-borda-clara);
+  flex-shrink: 0;
+  background: var(--cor-fundo);
+  flex-wrap: wrap;
+}
+
+.modal-atas-viewer-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-titulo);
+  font-size: 1rem;
+  color: var(--cor-texto);
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-atas-viewer-tabs {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.atas-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: transparent;
+  color: var(--cor-texto-secundario);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transicao);
+  font-family: var(--font-corpo);
+}
+
+.atas-tab:hover {
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+}
+
+.atas-tab.ativo {
+  background: var(--cor-primaria);
+  border-color: var(--cor-primaria);
+  color: #fffdf8;
+}
+
+.modal-atas-viewer-corpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+  min-height: 0;
+}
+
+/* Viewer de conteúdo */
+.atas-viewer-html {
+  max-width: 780px;
+  margin: 0 auto;
+  font-size: 0.88rem;
+  line-height: 1.8;
+  color: var(--cor-texto);
+}
+
+.atas-viewer-html h2 {
+  font-family: var(--font-titulo);
+  font-size: 1.3rem;
+  color: var(--cor-primaria-escura);
+  margin: 1.5rem 0 0.6rem;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--cor-borda-clara);
+}
+
+.atas-viewer-html h3 {
+  font-family: var(--font-titulo);
+  font-size: 1.05rem;
+  color: var(--cor-primaria);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.atas-viewer-html h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+  margin: 1rem 0 0.4rem;
+}
+
+.atas-viewer-html strong { color: var(--cor-primaria-escura); }
+.atas-viewer-html em { color: var(--cor-texto-secundario); }
+
+.atas-viewer-html li {
+  margin-left: 20px;
+  margin-bottom: 4px;
+  list-style: disc;
+}
+
+.ata-vazia-viewer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 12px;
+  color: var(--cor-texto-secundario);
+  text-align: center;
+}
+
+.ata-vazia-viewer i {
+  font-size: 2.5rem;
+  color: var(--cor-borda);
+}
+
+.ata-vazia-viewer p {
+  font-size: 0.85rem;
+  max-width: 280px;
+}
+
+/* Botão ver atas no card */
+.projeto-card-atas-btn-wrap {
+  padding-top: 8px;
+  border-top: 1px solid var(--cor-borda-clara);
+  margin-top: 4px;
+}
+
+.btn-ver-atas-projeto {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: var(--cor-destaque-bg);
+  border: 1px solid rgba(184, 134, 11, 0.25);
+  border-radius: var(--raio);
+  color: var(--cor-destaque);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transicao);
+  font-family: var(--font-corpo);
+}
+
+.btn-ver-atas-projeto:hover {
+  background: rgba(184, 134, 11, 0.18);
+  border-color: var(--cor-destaque);
+}
+
+/* =====================================================================
+   MODO FOCO — LAYOUT SPLIT
+===================================================================== */
+.modal-modo-foco-split {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Esquerda: diagrama (mantém comportamento original) */
+.modo-foco-esquerda {
+  overflow-y: auto;
+  padding: 24px;
+  min-height: 0;
+}
+
+/* Direita: painel de documentos */
+.modo-foco-documentos {
+  border-left: 1px solid var(--cor-borda-clara);
+  background: var(--cor-fundo);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modo-foco-doc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--cor-texto-secundario);
+  border-bottom: 1px solid var(--cor-borda-clara);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  flex-shrink: 0;
+}
+
+.modo-foco-doc-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--cor-borda-clara);
+  flex-shrink: 0;
+}
+
+.modo-foco-doc-lista {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px;
+}
+
+.modo-foco-doc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--raio);
+  cursor: pointer;
+  border: 1px solid var(--cor-borda-clara);
+  transition: var(--transicao);
+  margin-bottom: 6px;
+  background: var(--cor-fundo-card);
+}
+
+.modo-foco-doc-item:hover {
+  border-color: var(--cor-primaria);
+  background: var(--cor-primaria-bg);
+}
+
+.modo-foco-doc-item > i {
+  color: var(--cor-destaque);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.modo-foco-doc-item-info { flex: 1; min-width: 0; }
+
+.modo-foco-doc-item-titulo {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cor-texto);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modo-foco-doc-item-data {
+  font-size: 0.7rem;
+  color: var(--cor-texto-secundario);
+  margin-top: 2px;
+}
+
+/* Viewer dentro do Modo Foco */
+.modo-foco-doc-viewer {
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  display: none;
+}
+
+.modo-foco-doc-viewer-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--cor-borda-clara);
+  flex-shrink: 0;
+}
+
+.btn-voltar-lista {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: transparent;
+  color: var(--cor-texto-secundario);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: var(--transicao);
+  font-family: var(--font-corpo);
+}
+
+.btn-voltar-lista:hover {
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+}
+
+.modo-foco-doc-viewer-conteudo {
+  overflow-y: auto;
+  flex: 1;
+  padding: 16px;
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
 </style>

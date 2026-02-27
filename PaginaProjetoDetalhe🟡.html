@@ -854,19 +854,57 @@
         </div>
         <div class="modal-modo-foco-acoes">
           <button class="btn-acao-pequeno" onclick="novaAtividadeModoFoco()">
-          <i class="fas fa-plus"></i> Nova Atividade
-        </button>
+            <i class="fas fa-plus"></i> Nova Atividade
+          </button>
           <button class="btn-fechar-foco" onclick="fecharModoFoco()" title="Fechar Modo Foco">
-          <i class="fas fa-compress-alt"></i> Sair do Foco
-        </button>
+            <i class="fas fa-compress-alt"></i> Sair do Foco
+          </button>
         </div>
       </div>
-      <div class="modal-modo-foco-body" id="modoFocoBody">
-        <!-- Conteúdo injetado via JS -->
+
+      <!-- CORPO SPLIT: esquerda = estrutura, direita = documentos -->
+      <div class="modal-modo-foco-split">
+
+        <!-- Esquerda: diagrama/atividades (conteúdo original) -->
+        <div class="modo-foco-esquerda" id="modoFocoBody">
+          <!-- Conteúdo injetado via JS (renderizarDiagrama / sincronizarModoFoco) -->
+        </div>
+
+        <!-- Direita: painel de documentos (atas, transcrições) -->
+        <div class="modo-foco-documentos" id="modoFocoDocumentos">
+          <div class="modo-foco-doc-header">
+            <i class="fas fa-book-open" style="color:var(--cor-destaque);"></i>
+            <span>Documentos do Projeto</span>
+            <span class="badge-contador" id="modoFocoDocBadge">0</span>
+          </div>
+          <div class="modo-foco-doc-tabs">
+            <button class="atas-tab ativo" data-tab="atas" onclick="trocarTabDocFoco(this, 'atas')">
+              <i class="fas fa-file-lines"></i> Atas
+            </button>
+            <button class="atas-tab" data-tab="transcricoes" onclick="trocarTabDocFoco(this, 'transcricoes')">
+              <i class="fas fa-microphone"></i> Transcrições
+            </button>
+          </div>
+          <div class="modo-foco-doc-lista" id="modoFocoDocLista">
+            <div class="empty-state" style="font-size:0.8rem;">
+              <i class="fas fa-spinner fa-spin"></i>
+              <p>Carregando documentos...</p>
+            </div>
+          </div>
+          <div class="modo-foco-doc-viewer" id="modoFocoDocViewer" style="display:none;">
+            <div class="modo-foco-doc-viewer-header">
+              <button class="btn-voltar-lista" onclick="voltarParaListaDocFoco()">
+                <i class="fas fa-arrow-left"></i> Voltar
+              </button>
+              <span id="modoFocoDocViewerTitulo" style="font-size:0.82rem;font-weight:600;"></span>
+            </div>
+            <div class="modo-foco-doc-viewer-conteudo" id="modoFocoDocViewerConteudo"></div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
-
   <!-- ==================== MODAL TEMA: CLÁSSICO → AZUL ==================== -->
 <div id="modalTemaParaAzul" class="modal-overlay">
   <div class="modal-content" style="max-width:460px;">
@@ -960,7 +998,62 @@
     </div>
   </div>
 </div>
+  <!-- ==================== MODAL ATAS DO PROJETO ==================== -->
+  <div id="modalAtasProjeto" class="modal-overlay">
+    <div class="modal-content modal-atas-content">
+      <div class="modal-header">
+        <h3>
+          <i class="fas fa-book-open" style="color:var(--cor-destaque);"></i>
+          <span id="modalAtasProjetoTitulo">Atas do Projeto</span>
+        </h3>
+        <button class="btn-fechar-modal" onclick="fecharModalAtasProjeto()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-atas-body">
 
+        <!-- COLUNA ESQUERDA: catálogo de reuniões -->
+        <div class="modal-atas-catalogo">
+          <div class="modal-atas-catalogo-header">
+            <i class="fas fa-list" style="color:var(--cor-destaque);"></i>
+            <span>Reuniões vinculadas</span>
+            <span class="badge-contador" id="badgeContadorAtasProjeto">0</span>
+          </div>
+          <div class="modal-atas-catalogo-lista" id="catalogoAtasProjetoLista">
+            <div class="empty-state">
+              <i class="fas fa-spinner fa-spin"></i>
+              <p>Carregando...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUNA DIREITA: visualizador -->
+        <div class="modal-atas-visualizador">
+          <div class="modal-atas-viewer-header" id="atasViewerHeader">
+            <div class="modal-atas-viewer-titulo">
+              <i class="fas fa-file-lines" style="color:var(--cor-destaque);"></i>
+              <span id="atasViewerTitulo">Nenhuma reunião selecionada</span>
+            </div>
+            <div class="modal-atas-viewer-tabs" id="atasViewerTabs" style="display:none;">
+              <button class="atas-tab ativo" data-tab="ata" onclick="trocarTabAtasViewer(this, 'ata')">
+                <i class="fas fa-file-lines"></i> Ata
+              </button>
+              <button class="atas-tab" data-tab="transcricao" onclick="trocarTabAtasViewer(this, 'transcricao')">
+                <i class="fas fa-microphone"></i> Transcrição
+              </button>
+            </div>
+          </div>
+          <div class="modal-atas-viewer-corpo" id="atasViewerCorpo">
+            <div class="ata-vazia-viewer">
+              <i class="fas fa-book-open"></i>
+              <p>Selecione uma reunião no catálogo ao lado para visualizar a ata</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
   <!-- ==================== SCRIPTS ==================== -->
   <?!= include('PaginaProjetoDetalhe-JS'); ?>
 

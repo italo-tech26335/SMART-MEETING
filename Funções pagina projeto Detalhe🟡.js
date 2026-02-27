@@ -23,6 +23,68 @@ function obterPessoasParaQuem() {
 }
 
 /**
+ * Retorna as reuniões vinculadas a um projeto específico,
+ * incluindo o conteúdo completo de ata e transcrição.
+ * @param {string} projetoId
+ * @returns {{ sucesso: boolean, reunioes: Array, mensagem?: string }}
+ */
+function obterReunioesDoProjeto(projetoId) {
+  try {
+    if (!projetoId) return { sucesso: false, reunioes: [], mensagem: 'projetoId não informado' };
+
+    const nomeAba = typeof NOME_ABA_REUNIOES !== 'undefined' ? NOME_ABA_REUNIOES : 'Reuniões';
+    const colunas = typeof COLUNAS_REUNIOES !== 'undefined' ? COLUNAS_REUNIOES : {
+      ID: 0, TITULO: 1, DATA_INICIO: 2, DATA_FIM: 3, DURACAO: 4, STATUS: 5,
+      PARTICIPANTES: 6, TRANSCRICAO: 7, ATA: 8, SUGESTOES_IA: 9, LINK_AUDIO: 10,
+      LINK_ATA: 11, EMAILS_ENVIADOS: 12, PROJETOS_IMPACTADOS: 13
+    };
+
+    const planilha = SpreadsheetApp.getActiveSpreadsheet();
+    const aba = planilha.getSheetByName(nomeAba);
+    if (!aba || aba.getLastRow() <= 1) return { sucesso: true, reunioes: [] };
+
+    const dados = aba.getDataRange().getValues();
+    const reunioes = [];
+    const idBuscado = String(projetoId).trim();
+
+    for (let i = 1; i < dados.length; i++) {
+      const linha = dados[i];
+      const idCelula = linha[colunas.ID] ? String(linha[colunas.ID]).trim() : '';
+      if (!idCelula) continue;
+
+      const projVinculado = linha[colunas.PROJETOS_IMPACTADOS]
+        ? String(linha[colunas.PROJETOS_IMPACTADOS]).trim()
+        : '';
+      if (projVinculado !== idBuscado) continue;
+
+      const ataTexto = linha[colunas.ATA] ? String(linha[colunas.ATA]).trim() : '';
+      const transcricaoTexto = linha[colunas.TRANSCRICAO] ? String(linha[colunas.TRANSCRICAO]).trim() : '';
+
+      reunioes.push({
+        id: idCelula,
+        titulo: linha[colunas.TITULO] ? String(linha[colunas.TITULO]) : 'Reunião sem título',
+        data: linha[colunas.DATA_INICIO] ? String(linha[colunas.DATA_INICIO]) : '',
+        duracao: linha[colunas.DURACAO] ? String(linha[colunas.DURACAO]) : '',
+        participantes: linha[colunas.PARTICIPANTES] ? String(linha[colunas.PARTICIPANTES]) : '',
+        linkAudio: linha[colunas.LINK_AUDIO] ? String(linha[colunas.LINK_AUDIO]) : '',
+        ata: ataTexto,
+        transcricao: transcricaoTexto,
+        temAta: ataTexto.length > 10,
+        temTranscricao: transcricaoTexto.length > 10
+      });
+    }
+
+    // Ordenar da mais recente para a mais antiga
+    reunioes.sort(function(a, b) { return b.data > a.data ? 1 : -1; });
+
+    return { sucesso: true, reunioes: reunioes };
+  } catch (e) {
+    Logger.log('ERRO obterReunioesDoProjeto: ' + e.toString());
+    return { sucesso: false, reunioes: [], mensagem: e.message };
+  }
+}
+
+/**
  * Carrega todas as etapas e prioridades de um projeto específico
  * @param {string} projetoId - ID do projeto
  * @returns {Object} { sucesso, etapas, prioridades, mensagem }
@@ -2446,5 +2508,4 @@ entry.projetos.forEach(function(proj) {
   h += '</div></body></html>';
   return h;
 }
-
 
