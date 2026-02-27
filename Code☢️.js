@@ -171,12 +171,12 @@ function doGet(e) {
 
     // ==================== PÁGINA DE PROJETOS ====================
     if (pagina === 'projetos') {
-      nomeArquivoHtml = 'Paginaprojetos';
+      nomeArquivoHtml = 'Paginaprojetos🎈';
       titulo = 'Smart Meeting - Gestão de Projetos';
     }
     // ==================== PÁGINA DE DETALHE DO PROJETO ====================
     else if (pagina === 'projeto') {
-      nomeArquivoHtml = 'PaginaProjetoDetalhe';
+      nomeArquivoHtml = 'PaginaProjetoDetalhe🟡';
       titulo = 'Smart Meeting - Detalhes do Projeto';
 
       // REMOVIDO: Não passa mais projetoIdUrl
@@ -193,7 +193,7 @@ function doGet(e) {
     }
     // ==================== PÁGINA DE REUNIÕES (PADRÃO) ====================
     else {
-      nomeArquivoHtml = 'PaginaReunioes';
+      nomeArquivoHtml = 'PaginaReunioes▶️';
       titulo = 'Smart Meeting - Reuniões';
     }
 
