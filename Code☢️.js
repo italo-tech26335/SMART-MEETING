@@ -1,13 +1,13 @@
 const ID_PLANILHA = '1rjcUe9iGoguQVNcmwRHoxICmWB44q3tv5ARdp58pqxo';
 
 /** =====================================================================
- *                          ABAS DA PLANILHA 
+ *                          ABAS DA PLANILHAss
 =========================================================================*/
 
-const NOME_ABA_SETORES = 'Setores';
+const NOME_ABA_SETORES = 'Setores'
 const NOME_ABA_PROJETOS = 'Projetos';
 const NOME_ABA_ETAPAS = 'Atividades';
-const NOME_ABA_RESPONSAVEIS = 'Responsáveis';
+const NOME_ABA_RESPONSAVEIS = 'Responsaveis';
 const NOME_ABA_DEPENDENCIAS = 'Dependencias';
 const NOME_ABA_PRIORIDADES = 'PrioridadesResponsavel';
 const NOME_ABA_PERMISSOES = 'Permissoes';
@@ -25,8 +25,8 @@ const COLUNAS_PERMISSOES = {
   ID: 0,
   EMAIL_USUARIO: 1,
   NIVEL_ACESSO: 2,        // 'admin', 'gestor', 'colaborador'
-  SETORES_PERMITIDOS: 3,  // IDs separados por vírgula (vazio = todos para admin)
-  PROJETOS_PERMITIDOS: 4, // IDs separados por vírgula (vazio = herda do setor)
+  SETORES_PERMITIDOS: 3,  // IDs separados por v?rgula (vazio = todos para admin)
+  PROJETOS_PERMITIDOS: 4, // IDs separados por v?rgula (vazio = herda do setor)
   PODE_CRIAR_PROJETO: 5,  // true/false
   PODE_CRIAR_ETAPA: 6,    // true/false
   ATIVO: 7                // true/false
@@ -120,13 +120,13 @@ const STATUS_ETAPAS = {
   A_FAZER: 'A Fazer',
   EM_ANDAMENTO: 'Em Andamento',
   BLOQUEADA: 'Bloqueada',
-  CONCLUIDA: 'Concluída'
+  CONCLUIDA: 'Conclu?da'
 };
 
 const TIPOS_PROJETO = {
   MELHORIA: 'Melhoria',
-  CORRECAO: 'Correção',
-  NOVA_IMPLEMENTACAO: 'Nova Implementação'
+  CORRECAO: 'Corre?o',
+  NOVA_IMPLEMENTACAO: 'Nova Implementa?o'
 };
 
 const URGENCIA_PENDENCIA = {
@@ -171,14 +171,14 @@ function doGet(e) {
 
     // ==================== PÁGINA DE PROJETOS ====================
     if (pagina === 'projetos') {
-      nomeArquivoHtml = 'Paginaprojetos🎈';
+      nomeArquivoHtml = 'Paginaprojetos';
       titulo = 'Smart Meeting - Gestão de Projetos';
     }
     // ==================== PÁGINA DE DETALHE DO PROJETO ====================
     else if (pagina === 'projeto') {
-      nomeArquivoHtml = 'PaginaProjetoDetalhe🟡';
+      nomeArquivoHtml = 'PaginaProjetoDetalhe';
       titulo = 'Smart Meeting - Detalhes do Projeto';
-      
+
       // REMOVIDO: Não passa mais projetoIdUrl
       return HtmlService.createTemplateFromFile(nomeArquivoHtml)
         .evaluate()
@@ -193,7 +193,7 @@ function doGet(e) {
     }
     // ==================== PÁGINA DE REUNIÕES (PADRÃO) ====================
     else {
-      nomeArquivoHtml = 'PaginaReunioes▶️'; 
+      nomeArquivoHtml = 'PaginaReunioes';
       titulo = 'Smart Meeting - Reuniões';
     }
 
@@ -202,7 +202,7 @@ function doGet(e) {
       .setTitle(titulo)
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
       .addMetaTag('viewport', 'width=device-width, initial-scale=1');
-      
+
   } catch (erro) {
     Logger.log('ERRO no doGet: ' + erro.toString());
     return HtmlService.createHtmlOutput('Erro ao carregar página: ' + erro.message);
@@ -248,6 +248,48 @@ function obterPlanilha() {
   return obterPlanilhaAtiva();
 }
 
+const CACHE_TTL_PADRAO_SEGUNDOS = 120;
+
+function _chaveCacheAba(nomeAba) {
+  return 'aba_cache::' + nomeAba;
+}
+
+function _cacheGetJson(chave) {
+  try {
+    const valor = CacheService.getScriptCache().get(chave);
+    return valor ? JSON.parse(valor) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function _cachePutJson(chave, valor, ttlSegundos) {
+  try {
+    CacheService.getScriptCache().put(chave, JSON.stringify(valor), ttlSegundos || CACHE_TTL_PADRAO_SEGUNDOS);
+  } catch (e) {
+    //     // Falha de cache n?o deve interromper fluxo.
+  }
+}
+
+function limparCacheAba(nomeAba) {
+  try {
+    CacheService.getScriptCache().remove(_chaveCacheAba(nomeAba));
+  } catch (e) {
+    // Ignora erro de cache.
+  }
+}
+
+function obterDadosAbaComCache(nomeAba, ttlSegundos) {
+  const chave = _chaveCacheAba(nomeAba);
+  const cache = _cacheGetJson(chave);
+  if (cache && Array.isArray(cache)) return cache;
+
+  const aba = obterAba(nomeAba);
+  const dados = aba ? aba.getDataRange().getValues() : [];
+  _cachePutJson(chave, dados, ttlSegundos || CACHE_TTL_PADRAO_SEGUNDOS);
+  return dados;
+}
+
 function obterAba(nomeAba) {
   const planilha = obterPlanilha();
   let aba = planilha.getSheetByName(nomeAba);
@@ -289,8 +331,7 @@ function obterEmailUsuario() {
 function verificarPermissaoEdicao() {
   const emailUsuario = obterEmailUsuario();
   if (!emailUsuario) return false;
-  const aba = obterAba(NOME_ABA_RESPONSAVEIS);
-  const dados = aba.getDataRange().getValues();
+  const dados = obterDadosAbaComCache(NOME_ABA_RESPONSAVEIS);
   if (dados.length <= 1) return true;
   const emailLower = emailUsuario.toLowerCase();
   for (let i = 1; i < dados.length; i++) {
@@ -300,7 +341,7 @@ function verificarPermissaoEdicao() {
 }
 
 function exigirPermissaoEdicao() {
-  // Sem restrição — qualquer usuário autenticado pode editar
+    // Sem restri?o ? qualquer usu?rio autenticado pode editar
   return true;
 }
 
@@ -333,7 +374,7 @@ function temChaveApiConfigurada() {
     if (chave && chave.trim() !== '') return true;
   }
   
-  // Verificar chave específica do projeto editor
+  //   // Verificar chave espec?fica do projeto editor
   const chaveProjeto = propriedades.getProperty(CHAVE_PROPRIEDADE_GEMINI);
   if (chaveProjeto && chaveProjeto.trim() !== '') return true;
   
@@ -378,7 +419,7 @@ function obterChaveGeminiProjeto() {
 function salvarChaveGeminiProjeto(chave) {
   try {
     if (!chave || chave.trim() === '') {
-      return { sucesso: false, mensagem: 'Chave inválida' };
+      return { sucesso: false, mensagem: 'Chave inv?lida' };
     }
     PropertiesService.getScriptProperties().setProperty(CHAVE_PROPRIEDADE_GEMINI, chave.trim());
     return { sucesso: true, mensagem: 'Chave salva com sucesso!' };
@@ -389,7 +430,7 @@ function salvarChaveGeminiProjeto(chave) {
 }
 
 /**  ==========================================
-//        SISTEMA DE PERMISSÕES GRANULAR
+//        //        SISTEMA DE PERMISS?ES GRANULAR
 //   ========================================== */
 
 function obterPermissoesUsuarioAtual() {
@@ -401,8 +442,8 @@ function obterPermissoesUsuarioAtual() {
     
     const aba = obterAba(NOME_ABA_PERMISSOES);
     if (!aba || aba.getLastRow() <= 1) {
-      // Se não há permissões configuradas, verifica se é o primeiro acesso
-      // Primeiro usuário vira admin automaticamente
+      //       // Se n?o h? permiss?es configuradas, verifica se ? o primeiro acesso
+      //       // Primeiro usu?rio vira admin automaticamente
       const totalLinhas = aba ? aba.getLastRow() : 0;
       if (totalLinhas <= 1) {
         const novaPermissao = criarPermissaoAdmin(emailUsuario);
@@ -412,7 +453,7 @@ function obterPermissoesUsuarioAtual() {
       return criarPermissaoPadrao('colaborador');
     }
     
-    const dados = aba.getDataRange().getValues();
+    const dados = obterDadosAbaComCache(NOME_ABA_PERMISSOES);
     const emailLower = emailUsuario.toLowerCase();
     
     for (let i = 1; i < dados.length; i++) {
@@ -436,15 +477,14 @@ function obterPermissoesUsuarioAtual() {
       }
     }
     
-    // Usuário não encontrado - verifica se está na aba de responsáveis
-    const abaResp = obterAba(NOME_ABA_RESPONSAVEIS);
-    const dadosResp = abaResp.getDataRange().getValues();
+    //     // Usu?rio n?o encontrado - verifica se est? na aba de respons?veis
+    const dadosResp = obterDadosAbaComCache(NOME_ABA_RESPONSAVEIS);
     
     for (let i = 1; i < dadosResp.length; i++) {
       const emailResp = (dadosResp[i][COLUNAS_RESPONSAVEIS.EMAIL] || '').toString().toLowerCase();
       if (emailResp === emailLower) {
-        // Está cadastrado como responsável mas sem permissão explícita
-        // Cria permissão de colaborador automaticamente
+        //         // Est? cadastrado como respons?vel mas sem permiss?o expl?cita
+        //         // Cria permiss?o de colaborador automaticamente
         const novaPermissao = criarPermissaoPadrao('colaborador');
         novaPermissao.email = emailUsuario;
         salvarPermissao(novaPermissao);
@@ -508,6 +548,7 @@ function salvarPermissao(permissao) {
     ];
     
     aba.appendRow(linha);
+    limparCacheAba(NOME_ABA_PERMISSOES);
     return { sucesso: true, id: id };
   } catch (e) {
     Logger.log('ERRO salvarPermissao: ' + e.toString());
@@ -525,20 +566,20 @@ function podeVerProjeto(projetoId, permissoes = null) {
   try {
     if (!permissoes) permissoes = obterPermissoesUsuarioAtual();
     
-    // Admin vê tudo
+        // Admin v? tudo
     if (permissoes.nivelAcesso === NIVEIS_ACESSO.ADMIN) return true;
     
-    // Inativo ou visitante não vê nada
+    //     // Inativo ou visitante n?o v? nada
     if (!permissoes.ativo || permissoes.nivelAcesso === 'visitante' || permissoes.nivelAcesso === 'inativo') {
       return false;
     }
     
-    // Verifica se projeto está na lista de permitidos
+    //     // Verifica se projeto est? na lista de permitidos
     if (permissoes.projetosPermitidos.length > 0) {
       if (permissoes.projetosPermitidos.includes(projetoId)) return true;
     }
     
-    // Verifica se o setor do projeto está nos setores permitidos
+    //     // Verifica se o setor do projeto est? nos setores permitidos
     const projeto = obterProjetoPorIdSimples(projetoId);
     if (projeto && projeto.setor && permissoes.setoresPermitidos.length > 0) {
       if (permissoes.setoresPermitidos.includes(projeto.setor)) return true;
@@ -551,18 +592,18 @@ function podeVerProjeto(projetoId, permissoes = null) {
       }
     }
     
-    // Colaborador pode ver projetos onde está atribuído
+    //     // Colaborador pode ver projetos onde est? atribu?do
     if (permissoes.nivelAcesso === NIVEIS_ACESSO.COLABORADOR) {
       const emailUsuario = obterEmailUsuario().toLowerCase();
       const responsavel = obterResponsavelPorEmail(emailUsuario);
       
       if (responsavel) {
-        // Verifica se está nos responsáveis do projeto
+        //         // Verifica se est? nos respons?veis do projeto
         if (projeto && projeto.responsaveisIds && projeto.responsaveisIds.includes(responsavel.id)) {
           return true;
         }
         
-        // Verifica se está em alguma etapa do projeto
+        //         // Verifica se est? em alguma etapa do projeto
         const etapas = obterTodasEtapas().filter(e => e.projetoId === projetoId);
         for (const etapa of etapas) {
           if (etapa.responsaveisIds && etapa.responsaveisIds.includes(responsavel.id)) {
@@ -572,7 +613,7 @@ function podeVerProjeto(projetoId, permissoes = null) {
       }
     }
     
-    // Se não tem restrições de setor/projeto configuradas, permite ver
+    //     // Se n?o tem restri?es de setor/projeto configuradas, permite ver
     if (permissoes.setoresPermitidos.length === 0 && permissoes.projetosPermitidos.length === 0) {
       return true;
     }
@@ -591,7 +632,7 @@ function podeEditarProjeto(projetoId, permissoes = null) {
     // Admin edita tudo
     if (permissoes.nivelAcesso === NIVEIS_ACESSO.ADMIN) return true;
     
-    // Inativo ou visitante não edita nada
+    //     // Inativo ou visitante n?o edita nada
     if (!permissoes.ativo || permissoes.nivelAcesso === 'visitante' || permissoes.nivelAcesso === 'inativo') {
       return false;
     }
@@ -609,7 +650,7 @@ function podeEditarProjeto(projetoId, permissoes = null) {
       }
     }
     
-    // Colaborador NÃO pode editar projeto, apenas etapas
+    //     // Colaborador N?O pode editar projeto, apenas etapas
     if (permissoes.nivelAcesso === NIVEIS_ACESSO.COLABORADOR) {
       return false;
     }
@@ -628,7 +669,7 @@ function podeEditarEtapa(etapaId, permissoes = null) {
     // Admin edita tudo
     if (permissoes.nivelAcesso === NIVEIS_ACESSO.ADMIN) return true;
     
-    // Inativo ou visitante não edita nada
+    //     // Inativo ou visitante n?o edita nada
     if (!permissoes.ativo) return false;
     
     const etapa = dadosDiagrama?.etapas?.find(e => e.id === etapaId) || obterEtapaPorId(etapaId);
@@ -645,7 +686,7 @@ function podeEditarEtapa(etapaId, permissoes = null) {
       }
     }
     
-    // Colaborador pode editar etapas onde está atribuído
+    //     // Colaborador pode editar etapas onde est? atribu?do
     if (permissoes.nivelAcesso === NIVEIS_ACESSO.COLABORADOR) {
       const emailUsuario = obterEmailUsuario().toLowerCase();
       const responsavel = obterResponsavelPorEmail(emailUsuario);
@@ -684,10 +725,8 @@ function ehAdministrador(permissoes = null) {
 
 function obterProjetoPorIdSimples(projetoId) {
   try {
-    const aba = obterAba(NOME_ABA_PROJETOS);
-    if (!aba || aba.getLastRow() <= 1) return null;
-    
-    const dados = aba.getDataRange().getValues();
+    const dados = obterDadosAbaComCache(NOME_ABA_PROJETOS);
+    if (!dados || dados.length <= 1) return null;
     for (let i = 1; i < dados.length; i++) {
       if (dados[i][COLUNAS_PROJETOS.ID] === projetoId) {
         const rawIds = dados[i][COLUNAS_PROJETOS.RESPONSAVEIS_IDS] || '';
@@ -708,10 +747,8 @@ function obterProjetoPorIdSimples(projetoId) {
 
 function obterEtapaPorId(etapaId) {
   try {
-    const aba = obterAba(NOME_ABA_ETAPAS);
-    if (!aba || aba.getLastRow() <= 1) return null;
-
-    const dados = aba.getDataRange().getValues();
+    const dados = obterDadosAbaComCache(NOME_ABA_ETAPAS);
+    if (!dados || dados.length <= 1) return null;
     for (let i = 1; i < dados.length; i++) {
       if (dados[i][COLUNAS_ETAPAS.ID] === etapaId) {
         const rawIds = dados[i][COLUNAS_ETAPAS.RESPONSAVEIS_IDS] || '';
@@ -733,10 +770,8 @@ function obterResponsavelPorEmail(email) {
   try {
     if (!email) return null;
     const emailLower = email.toLowerCase();
-    const aba = obterAba(NOME_ABA_RESPONSAVEIS);
-    if (!aba || aba.getLastRow() <= 1) return null;
-    
-    const dados = aba.getDataRange().getValues();
+    const dados = obterDadosAbaComCache(NOME_ABA_RESPONSAVEIS);
+    if (!dados || dados.length <= 1) return null;
     for (let i = 1; i < dados.length; i++) {
       const emailResp = (dados[i][COLUNAS_RESPONSAVEIS.EMAIL] || '').toString().toLowerCase();
       if (emailResp === emailLower) {
@@ -761,12 +796,11 @@ function listarTodasPermissoes() {
       return { sucesso: false, mensagem: 'Acesso negado. Apenas administradores.' };
     }
     
-    const aba = obterAba(NOME_ABA_PERMISSOES);
-    if (!aba || aba.getLastRow() <= 1) {
+    const dados = obterDadosAbaComCache(NOME_ABA_PERMISSOES);
+    if (!dados || dados.length <= 1) {
       return { sucesso: true, permissoes: [] };
     }
-    
-    const dados = aba.getDataRange().getValues();
+
     const permissoes = [];
     
     for (let i = 1; i < dados.length; i++) {
@@ -799,31 +833,32 @@ function salvarPermissaoUsuario(dadosPermissao) {
     }
     
     if (!dadosPermissao.email) {
-      return { sucesso: false, mensagem: 'Email é obrigatório' };
+      return { sucesso: false, mensagem: 'Email ? obrigat?rio' };
     }
     
     const aba = obterAba(NOME_ABA_PERMISSOES);
     const dados = aba.getDataRange().getValues();
     const emailLower = dadosPermissao.email.toLowerCase();
     
-    // Verifica se já existe
+        // Verifica se j? existe
     for (let i = 1; i < dados.length; i++) {
       const emailRegistro = (dados[i][COLUNAS_PERMISSOES.EMAIL_USUARIO] || '').toString().toLowerCase();
       if (emailRegistro === emailLower) {
-        // Atualiza existente
         const linha = i + 1;
-        aba.getRange(linha, COLUNAS_PERMISSOES.NIVEL_ACESSO + 1).setValue(dadosPermissao.nivelAcesso || NIVEIS_ACESSO.COLABORADOR);
-        aba.getRange(linha, COLUNAS_PERMISSOES.SETORES_PERMITIDOS + 1).setValue(
-          Array.isArray(dadosPermissao.setoresPermitidos) ? dadosPermissao.setoresPermitidos.join(',') : ''
-        );
-        aba.getRange(linha, COLUNAS_PERMISSOES.PROJETOS_PERMITIDOS + 1).setValue(
-          Array.isArray(dadosPermissao.projetosPermitidos) ? dadosPermissao.projetosPermitidos.join(',') : ''
-        );
-        aba.getRange(linha, COLUNAS_PERMISSOES.PODE_CRIAR_PROJETO + 1).setValue(dadosPermissao.podeCriarProjeto === true);
-        aba.getRange(linha, COLUNAS_PERMISSOES.PODE_CRIAR_ETAPA + 1).setValue(dadosPermissao.podeCriarEtapa === true);
-        aba.getRange(linha, COLUNAS_PERMISSOES.ATIVO + 1).setValue(dadosPermissao.ativo !== false);
-        
-        return { sucesso: true, mensagem: 'Permissão atualizada!', id: dados[i][COLUNAS_PERMISSOES.ID] };
+        const linhaAtualizada = dados[i].slice();
+        linhaAtualizada[COLUNAS_PERMISSOES.NIVEL_ACESSO] = dadosPermissao.nivelAcesso || NIVEIS_ACESSO.COLABORADOR;
+        linhaAtualizada[COLUNAS_PERMISSOES.SETORES_PERMITIDOS] =
+          Array.isArray(dadosPermissao.setoresPermitidos) ? dadosPermissao.setoresPermitidos.join(',') : '';
+        linhaAtualizada[COLUNAS_PERMISSOES.PROJETOS_PERMITIDOS] =
+          Array.isArray(dadosPermissao.projetosPermitidos) ? dadosPermissao.projetosPermitidos.join(',') : '';
+        linhaAtualizada[COLUNAS_PERMISSOES.PODE_CRIAR_PROJETO] = dadosPermissao.podeCriarProjeto === true;
+        linhaAtualizada[COLUNAS_PERMISSOES.PODE_CRIAR_ETAPA] = dadosPermissao.podeCriarEtapa === true;
+        linhaAtualizada[COLUNAS_PERMISSOES.ATIVO] = dadosPermissao.ativo !== false;
+
+        aba.getRange(linha, 1, 1, linhaAtualizada.length).setValues([linhaAtualizada]);
+        limparCacheAba(NOME_ABA_PERMISSOES);
+
+        return { sucesso: true, mensagem: 'Permiss?o atualizada!', id: dados[i][COLUNAS_PERMISSOES.ID] };
       }
     }
     
@@ -841,7 +876,8 @@ function salvarPermissaoUsuario(dadosPermissao) {
     ];
     
     aba.appendRow(novaLinha);
-    return { sucesso: true, mensagem: 'Permissão criada!', id: id };
+    limparCacheAba(NOME_ABA_PERMISSOES);
+    return { sucesso: true, mensagem: 'Permiss?o criada!', id: id };
   } catch (e) {
     Logger.log('ERRO salvarPermissaoUsuario: ' + e.toString());
     return { sucesso: false, mensagem: e.message };
@@ -860,19 +896,20 @@ function removerPermissaoUsuario(permissaoId) {
     
     for (let i = 1; i < dados.length; i++) {
       if (dados[i][COLUNAS_PERMISSOES.ID] === permissaoId) {
-        // Não permite remover o próprio admin
+                // Não permite remover o próprio admin
         const emailPermissao = dados[i][COLUNAS_PERMISSOES.EMAIL_USUARIO];
         const emailAtual = obterEmailUsuario();
         if (emailPermissao.toLowerCase() === emailAtual.toLowerCase()) {
-          return { sucesso: false, mensagem: 'Você não pode remover sua própria permissão!' };
+          return { sucesso: false, mensagem: 'Voc? n?o pode remover sua pr?pria permiss?o!' };
         }
         
         aba.deleteRow(i + 1);
-        return { sucesso: true, mensagem: 'Permissão removida!' };
+        limparCacheAba(NOME_ABA_PERMISSOES);
+        return { sucesso: true, mensagem: 'Permiss?o removida!' };
       }
     }
     
-    return { sucesso: false, mensagem: 'Permissão não encontrada' };
+    return { sucesso: false, mensagem: 'Permiss?o n?o encontrada' };
   } catch (e) {
     Logger.log('ERRO removerPermissaoUsuario: ' + e.toString());
     return { sucesso: false, mensagem: e.message };

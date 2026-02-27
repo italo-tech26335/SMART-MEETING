@@ -937,49 +937,33 @@ function atualizarProjetoDaIdentificacao(idExistente, dados) {
       return { sucesso: false, mensagem: 'Projeto com ID "' + idExistente + '" não encontrado na planilha' };
     }
 
-    // Atualizar apenas os campos que foram informados (não undefined)
-    if (dados.nome !== undefined && dados.nome !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.NOME + 1).setValue(dados.nome);
-    }
-    if (dados.descricao !== undefined && dados.descricao !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.DESCRICAO + 1).setValue(dados.descricao);
-    }
-    if (dados.tipo !== undefined && dados.tipo !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.TIPO + 1).setValue(dados.tipo);
-    }
-    if (dados.paraQuem !== undefined && dados.paraQuem !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.PARA_QUEM + 1).setValue(dados.paraQuem);
-    }
-    if (dados.status !== undefined && dados.status !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.STATUS + 1).setValue(dados.status);
-    }
-    if (dados.prioridade !== undefined && dados.prioridade !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.PRIORIDADE + 1).setValue(dados.prioridade);
-    }
-    if (dados.link !== undefined && dados.link !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.LINK + 1).setValue(dados.link);
-    }
-    if (dados.gravidade !== undefined && dados.gravidade !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.GRAVIDADE + 1).setValue(dados.gravidade);
-    }
-    if (dados.urgencia !== undefined && dados.urgencia !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.URGENCIA + 1).setValue(dados.urgencia);
-    }
-    if (dados.bloqueado !== undefined && dados.bloqueado !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.BLOQUEADO + 1).setValue(dados.bloqueado);
-    }
-    if (dados.setor !== undefined && dados.setor !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.SETOR + 1).setValue(dados.setor);
-    }
-    if (dados.pilar !== undefined && dados.pilar !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.PILAR + 1).setValue(dados.pilar);
-    }
-    if (dados.responsaveisIds !== undefined && dados.responsaveisIds !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.RESPONSAVEIS_IDS + 1).setValue(dados.responsaveisIds);
-    }
-    if (dados.valorPrioridade !== undefined && dados.valorPrioridade !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_PROJETOS.VALOR_PRIORIDADE + 1).setValue(dados.valorPrioridade);
-    }
+    // Atualiza em memória e grava a linha inteira em 1 operação.
+    const indice = linhaEncontrada - 1;
+    const linhaAtualizada = valores[indice].slice();
+    const mapa = {
+      nome: COLUNAS_PROJETOS.NOME,
+      descricao: COLUNAS_PROJETOS.DESCRICAO,
+      tipo: COLUNAS_PROJETOS.TIPO,
+      paraQuem: COLUNAS_PROJETOS.PARA_QUEM,
+      status: COLUNAS_PROJETOS.STATUS,
+      prioridade: COLUNAS_PROJETOS.PRIORIDADE,
+      link: COLUNAS_PROJETOS.LINK,
+      gravidade: COLUNAS_PROJETOS.GRAVIDADE,
+      urgencia: COLUNAS_PROJETOS.URGENCIA,
+      bloqueado: COLUNAS_PROJETOS.BLOQUEADO,
+      setor: COLUNAS_PROJETOS.SETOR,
+      pilar: COLUNAS_PROJETOS.PILAR,
+      responsaveisIds: COLUNAS_PROJETOS.RESPONSAVEIS_IDS,
+      valorPrioridade: COLUNAS_PROJETOS.VALOR_PRIORIDADE
+    };
+
+    Object.keys(mapa).forEach(function(campo) {
+      if (dados[campo] !== undefined && dados[campo] !== null) {
+        linhaAtualizada[mapa[campo]] = dados[campo];
+      }
+    });
+
+    aba.getRange(linhaEncontrada, 1, 1, linhaAtualizada.length).setValues([linhaAtualizada]);
 
     return { sucesso: true, mensagem: 'Projeto "' + idExistente + '" atualizado com sucesso (linha ' + linhaEncontrada + ')' };
 
@@ -1007,22 +991,21 @@ function atualizarEtapaDaIdentificacao(idExistente, dados) {
       return { sucesso: false, mensagem: 'Atividade com ID "' + idExistente + '" não encontrada' };
     }
 
-    // Atualiza apenas os 4 campos editáveis (ID e PROJETO_ID raramente mudam)
-    if (dados.projetoId !== undefined && dados.projetoId !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_ETAPAS.PROJETO_ID + 1).setValue(dados.projetoId);
-    }
-    if (dados.responsaveisIds !== undefined && dados.responsaveisIds !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_ETAPAS.RESPONSAVEIS_IDS + 1).setValue(dados.responsaveisIds);
-    }
-    if (dados.nome !== undefined && dados.nome !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_ETAPAS.NOME + 1).setValue(dados.nome);
-    }
-    if (dados.oQueFazer !== undefined && dados.oQueFazer !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_ETAPAS.O_QUE_FAZER + 1).setValue(dados.oQueFazer);
-    }
-    if (dados.status !== undefined && dados.status !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_ETAPAS.STATUS + 1).setValue(dados.status);
-    }
+    const indice = linhaEncontrada - 1;
+    const linhaAtualizada = valores[indice].slice();
+    const mapa = {
+      projetoId: COLUNAS_ETAPAS.PROJETO_ID,
+      responsaveisIds: COLUNAS_ETAPAS.RESPONSAVEIS_IDS,
+      nome: COLUNAS_ETAPAS.NOME,
+      oQueFazer: COLUNAS_ETAPAS.O_QUE_FAZER,
+      status: COLUNAS_ETAPAS.STATUS
+    };
+    Object.keys(mapa).forEach(function(campo) {
+      if (dados[campo] !== undefined && dados[campo] !== null) {
+        linhaAtualizada[mapa[campo]] = dados[campo];
+      }
+    });
+    aba.getRange(linhaEncontrada, 1, 1, linhaAtualizada.length).setValues([linhaAtualizada]);
 
     return {
       sucesso: true,
@@ -1059,15 +1042,19 @@ function atualizarSetorDaIdentificacao(idExistente, dados) {
       return { sucesso: false, mensagem: 'Setor com ID "' + idExistente + '" não encontrado na planilha' };
     }
 
-    if (dados.nome !== undefined && dados.nome !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_SETORES.NOME + 1).setValue(dados.nome);
-    }
-    if (dados.descricao !== undefined && dados.descricao !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_SETORES.DESCRICAO + 1).setValue(dados.descricao);
-    }
-    if (dados.responsaveisIds !== undefined && dados.responsaveisIds !== null) {
-      aba.getRange(linhaEncontrada, COLUNAS_SETORES.RESPONSAVEIS_IDS + 1).setValue(dados.responsaveisIds);
-    }
+    const indice = linhaEncontrada - 1;
+    const linhaAtualizada = valores[indice].slice();
+    const mapa = {
+      nome: COLUNAS_SETORES.NOME,
+      descricao: COLUNAS_SETORES.DESCRICAO,
+      responsaveisIds: COLUNAS_SETORES.RESPONSAVEIS_IDS
+    };
+    Object.keys(mapa).forEach(function(campo) {
+      if (dados[campo] !== undefined && dados[campo] !== null) {
+        linhaAtualizada[mapa[campo]] = dados[campo];
+      }
+    });
+    aba.getRange(linhaEncontrada, 1, 1, linhaAtualizada.length).setValues([linhaAtualizada]);
 
     return { sucesso: true, mensagem: 'Setor "' + idExistente + '" atualizado com sucesso (linha ' + linhaEncontrada + ')' };
 

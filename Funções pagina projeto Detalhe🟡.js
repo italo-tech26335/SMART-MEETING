@@ -1594,40 +1594,26 @@ function salvarValorPrioridadeProjeto(projetoId, valorPrioridade, dadosCalculo) 
     const aba = obterAba(NOME_ABA_PROJETOS);
     const dados = aba.getDataRange().getValues();
     
+    dadosCalculo = dadosCalculo || {};
     for (let i = 1; i < dados.length; i++) {
       if (dados[i][COLUNAS_PROJETOS.ID] === projetoId) {
         const linha = i + 1;
-        
-        aba.getRange(linha, COLUNAS_PROJETOS.VALOR_PRIORIDADE + 1).setValue(valorPrioridade);
-        
-        if (dadosCalculo.gravidadeLabel) {
-          aba.getRange(linha, COLUNAS_PROJETOS.GRAVIDADE + 1).setValue(dadosCalculo.gravidadeLabel);
-        }
-        if (dadosCalculo.urgenciaLabel) {
-          aba.getRange(linha, COLUNAS_PROJETOS.URGENCIA + 1).setValue(dadosCalculo.urgenciaLabel);
-        }
-        if (dadosCalculo.paraQuemLabel) {
-          aba.getRange(linha, COLUNAS_PROJETOS.PARA_QUEM + 1).setValue(dadosCalculo.paraQuemLabel);
-        }
-        if (dadosCalculo.tipoProjetoLabel) {
-          aba.getRange(linha, COLUNAS_PROJETOS.TIPO + 1).setValue(dadosCalculo.tipoProjetoLabel);
-        }
-        // ← novo: salva esforço
-        if (dadosCalculo.esforcoLabel) {
-          aba.getRange(linha, COLUNAS_PROJETOS.ESFORCO + 1).setValue(dadosCalculo.esforcoLabel);
-        }
-        
+        const linhaAtualizada = dados[i].slice();
+        linhaAtualizada[COLUNAS_PROJETOS.VALOR_PRIORIDADE] = valorPrioridade;
+        if (dadosCalculo.gravidadeLabel) linhaAtualizada[COLUNAS_PROJETOS.GRAVIDADE] = dadosCalculo.gravidadeLabel;
+        if (dadosCalculo.urgenciaLabel) linhaAtualizada[COLUNAS_PROJETOS.URGENCIA] = dadosCalculo.urgenciaLabel;
+        if (dadosCalculo.paraQuemLabel) linhaAtualizada[COLUNAS_PROJETOS.PARA_QUEM] = dadosCalculo.paraQuemLabel;
+        if (dadosCalculo.tipoProjetoLabel) linhaAtualizada[COLUNAS_PROJETOS.TIPO] = dadosCalculo.tipoProjetoLabel;
+        if (dadosCalculo.esforcoLabel) linhaAtualizada[COLUNAS_PROJETOS.ESFORCO] = dadosCalculo.esforcoLabel;
+
         let categoriaPrioridade = 'Baixa';
         if (valorPrioridade >= 2102) {
           categoriaPrioridade = 'Alta';
         } else if (valorPrioridade >= 1078) {
           categoriaPrioridade = 'Média';
         }
-        
-        aba.getRange(linha, COLUNAS_PROJETOS.PRIORIDADE + 1).setValue(categoriaPrioridade);
-        
-        Logger.log(`Prioridade atualizada - Projeto: ${projetoId}, Valor: ${valorPrioridade}, Categoria: ${categoriaPrioridade}`);
-        Logger.log(`Dados salvos: Tipo=${dadosCalculo.tipoProjetoLabel}, ParaQuem=${dadosCalculo.paraQuemLabel}, Gravidade=${dadosCalculo.gravidadeLabel}, Urgencia=${dadosCalculo.urgenciaLabel}, Esforco=${dadosCalculo.esforcoLabel}`);
+        linhaAtualizada[COLUNAS_PROJETOS.PRIORIDADE] = categoriaPrioridade;
+        aba.getRange(linha, 1, 1, linhaAtualizada.length).setValues([linhaAtualizada]);
         
         return { 
           sucesso: true, 
@@ -1847,10 +1833,14 @@ function excluirProjeto(projetoId) {
         // Remove etapas associadas ao projeto
         const abaEtapas = obterAba(NOME_ABA_ETAPAS);
         const dadosEtapas = abaEtapas.getDataRange().getValues();
-        for (let j = dadosEtapas.length - 1; j >= 1; j--) {
+        const linhasParaExcluir = [];
+        for (let j = 1; j < dadosEtapas.length; j++) {
           if (dadosEtapas[j][COLUNAS_ETAPAS.PROJETO_ID] === projetoId) {
-            abaEtapas.deleteRow(j + 1);
+            linhasParaExcluir.push(j + 1);
           }
+        }
+        for (let k = linhasParaExcluir.length - 1; k >= 0; k--) {
+          abaEtapas.deleteRow(linhasParaExcluir[k]);
         }
 
         Logger.log('Projeto movido para lixeira: ' + projetoId);
@@ -2456,6 +2446,5 @@ entry.projetos.forEach(function(proj) {
   h += '</div></body></html>';
   return h;
 }
-
 
 
